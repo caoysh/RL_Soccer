@@ -25,24 +25,24 @@ if __name__ == '__main__':
     # running setting
     parser.add_argument('--cuda', default=False, action='store_true')
     parser.add_argument('--seed', '-s', type=int, default=0)
-    parser.add_argument('--n_process', type=int, default=4)
+    parser.add_argument('--n_process', type=int, default=4)  # better to set as the cpu core - opp_num - 1
     # basic env setting
-    parser.add_argument('--env', type=str, default="FightingiceDataFrameskip-v0")
-    parser.add_argument('--p2', type=str, default="Toothless")
+    parser.add_argument('--env', type=str, default="FightingiceDataFrameskip-v0")   # not used in Soccer Environment
+    parser.add_argument('--p2', type=str, default="Toothless")  # not used in Soccer Environment
     # non station agent settings
-    parser.add_argument('--non_station', default=False, action='store_true')
-    parser.add_argument('--stable', default=False, action='store_true')
-    parser.add_argument('--opp_freq', type=int, default=1)
-    parser.add_argument('--opp_list', nargs='+')
-    parser.add_argument('--opp_num', type=int, default=2)
-    parser.add_argument('--opp1_per', type=float, default=0.5)
-    parser.add_argument('--opp3_per', type=float, default=0.5)
+    parser.add_argument('--non_station', default=False, action='store_true')  # not used in Soccer Environment
+    parser.add_argument('--stable', default=False, action='store_true')  # not used in Soccer Environment
+    parser.add_argument('--opp_freq', type=int, default=1,help="opponent change frequency")
+    parser.add_argument('--opp_list', nargs='+',help="the list of different opponent type")
+    parser.add_argument('--opp_num', type=int, default=2, help="different opponent types")
+    parser.add_argument('--opp1_per', type=float, default=0.5, help="batch percentage of this opponent")  # name does not mean the opp type
+    parser.add_argument('--opp3_per', type=float, default=0.5, help="batch percentage of this opponent")  # name does not mean the opp type
     # sac setting
     parser.add_argument('--replay_size', type=int, default=50000)
     parser.add_argument('--batch_size', type=int, default=5000)
     parser.add_argument('--hid', type=int, default=256)
     parser.add_argument('--l', type=int, default=2, help="layers")
-    parser.add_argument('--episode', type=int, default=100000)
+    parser.add_argument('--episode', type=int, default=100000)   # changed to training steps, though the name is still episode
     parser.add_argument('--update_after', type=int, default=1000)
     parser.add_argument('--update_every', type=int, default=1)
     parser.add_argument('--max_ep_len', type=int, default=1000)
@@ -164,15 +164,17 @@ if __name__ == '__main__':
         p.requires_grad = False
 
     buffer_q = mp.SimpleQueue()
-    model_q = [mp.SimpleQueue() for _ in range(args.n_process + args.opp_num)]  # 1 test model queue
+    model_q = [mp.SimpleQueue() for _ in range(args.n_process + args.opp_num)]  # + n opp test process
     evaluation_queue = list()
     processes = []
-    # Process 0 for evaluation
+    # Process n for evaluation
     for rank in range(args.n_process + args.opp_num):  # + n opp test process
         # Test during training
         if rank < args.opp_num:
+            # test processes
             p = mp.Process(target=test_func, args=(rank, E, T, args, model_q[rank], torch.device("cpu"), tensorboard_dir))
         else:
+            # actor processes
             model_q[rank].put(shared_ac.state_dict())
             p = mp.Process(target=sac,
                            args=(rank, E, T,args, model_q[rank], buffer_q, torch.device("cpu"), tensorboard_dir))
@@ -184,6 +186,7 @@ if __name__ == '__main__':
     alpha = max(global_ac.log_alpha.exp().item(), args.min_alpha) if args.dynamic_alpha else args.min_alpha
     # alpha = args.min_alpha
     e = E.value()
+    # changed to T
     while T.value() < args.episode:
         t = T.value()
 
@@ -306,7 +309,7 @@ if __name__ == '__main__':
             print("Saving model at episode:{}".format(e))
             last_saved = e
     print("after the training loop, waiting for the end of evaluation")
-    # consume all the queue to make sure all processes can be closed correctly
+    # consume all the queue to make sure all child processes can be closed correctly
     while not buffer_q.empty():
         buffer_q.get()
     while len(evaluation_queue) > 0:
