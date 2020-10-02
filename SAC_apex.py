@@ -67,7 +67,7 @@ if __name__ == '__main__':
     # Saving settings
     parser.add_argument('--save_freq', type=int, default=500)
     parser.add_argument('--exp_name', type=str, default='percent5-5')
-    parser.add_argument('--save-dir', type=str, default="./exp_po45")
+    parser.add_argument('--save_dir', type=str, default="./exp_po45")
     parser.add_argument('--traj_dir', type=str, default="./experiments_per")
     parser.add_argument('--model_para', type=str, default="sac.torch")
     parser.add_argument('--cpc_para', type=str, default="cpc.torch")

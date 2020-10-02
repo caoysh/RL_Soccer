@@ -96,9 +96,9 @@ def sac(rank, E, T, args, model_q, buffer_q, device=None, tensorboard_dir=None,)
             scores.append(ep_ret)
             m_score = np.mean(scores[-100:])
             win_rate = np.mean(wins[-100:])
-            print(
-                "Process\t{}\topponent:{},\t# of local episode :{},\tglobal episode {},\tglobal step {}\tround score: {},\tmean score : {:.1f},\twin rate:{},\tsteps: {}".format(
-                    rank, opp, local_e, e, t, ep_ret, m_score, win_rate, ep_len))
+            # print(
+                # "Process\t{}\topponent:{},\t# of local episode :{},\tglobal episode {},\tglobal step {}\tround score: {},\tmean score : {:.1f},\twin rate:{},\tsteps: {}".format(
+                    # rank, opp, local_e, e, t, ep_ret, m_score, win_rate, ep_len))
             writer.add_scalar("actor/round_score", ep_ret, local_e)
             writer.add_scalar("actor/mean_score", m_score.item(), local_e)
             writer.add_scalar("actor/win_rate", win_rate.item(), local_e)
@@ -109,10 +109,10 @@ def sac(rank, E, T, args, model_q, buffer_q, device=None, tensorboard_dir=None,)
             discard = False
             trajectory, meta = list(), list()
             if not model_q.empty():
-                print("Process {}\tLOADING model at Global\t{},local\t{} EPISODE...".format(rank, e, local_e))
+                # print("Process {}\tLOADING model at Global\t{},local\t{} EPISODE...".format(rank, e, local_e))
                 received_obj = model_q.get()
                 model_dict = deepcopy(received_obj)
                 local_ac.load_state_dict(model_dict)
-                print("Process {}\tLOADED new mode at Global\t{},local\t{}!!!".format(rank, e, local_e))
+                # print("Process {}\tLOADED new mode at Global\t{},local\t{}!!!".format(rank, e, local_e))
                 del received_obj
     print("Process {}\tActor Ended".format(rank))
